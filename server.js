@@ -24,19 +24,26 @@ const upload = multer({ storage: storage }).fields([
 
 // Transporter configuration
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // use STARTTLS
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    // Force IPv4 to avoid IPv6 connectivity issues
+    tls: {
+        family: 4
     }
 });
 
 // Verify transporter
 transporter.verify((error, success) => {
     if (error) {
-        console.log('Transporter error:', error);
+        console.log('Transporter verification failed:', error.message);
+        console.log('Error details:', error);
     } else {
-        console.log('Server is ready to take messages');
+        console.log('Server is ready to send emails');
     }
 });
 
@@ -73,8 +80,20 @@ app.post('/api/send-otp', async (req, res) => {
         await transporter.sendMail(mailOptions);
         res.status(200).json({ success: true, message: 'OTP sent successfully!' });
     } catch (error) {
-        console.error('Error sending email:', error);
-        res.status(500).json({ success: false, message: 'Failed to send OTP.' });
+        console.error('Error sending email:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Error details:', error);
+
+        let errorMessage = 'Failed to send OTP.';
+        if (error.code === 'ESOCKET' || error.code === 'ENETUNREACH') {
+            errorMessage = 'Network connectivity issue. Please check your internet connection.';
+        } else if (error.code === 'EAUTH') {
+            errorMessage = 'Email authentication failed. Please check email credentials.';
+        } else if (error.code === 'ECONNREFUSED') {
+            errorMessage = 'Email server connection refused. Please try again later.';
+        }
+
+        res.status(500).json({ success: false, message: errorMessage });
     }
 });
 
