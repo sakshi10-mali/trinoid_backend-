@@ -5,6 +5,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const path = require('path');
+const dns = require('dns');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -31,7 +32,9 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
-    // Force IPv4 to avoid IPv6 connectivity issues
+    // Force IPv4 and avoid IPv6 connectivity issues
+    localAddress: '0.0.0.0',
+    lookup: (hostname, options, callback) => dns.lookup(hostname, { family: 4 }, callback),
     tls: {
         family: 4
     }
