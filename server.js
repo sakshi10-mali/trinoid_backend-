@@ -27,7 +27,7 @@ const upload = multer({ storage: storage }).fields([
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
-    secure: false, // use STARTTLS
+    secure: true, // use STARTTLS
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
